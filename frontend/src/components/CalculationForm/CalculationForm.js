@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import { Paper } from "@mui/material";
+import Axios from "axios";
+import swal from "sweetalert";
 
 const CalculationForm = () => {
   const [valueInput, setValueInput] = useState(0);
@@ -8,6 +10,15 @@ const CalculationForm = () => {
   const [ProductID, setProductID] = useState();
   const [AV, setAV] = useState(0);
   const [totalValue, setTotalValue] = useState(0);
+  const [CD_Rate, setCD_Rate] = useState();
+  const [RD_Rate, setRD_Rate] = useState();
+  const [SD_Rate, setSD_Rate] = useState();
+  const [VAT_Rate, setVAT_Rate] = useState();
+  const [CD_Val, setCD_Val] = useState();
+  const [RD_Val, setRD_Val] = useState();
+  const [SD_Val, setSD_Val] = useState();
+  const [VAT_Val, setVAT_Val] = useState();
+  const [total, setTotal] = useState();
 
   useEffect(() => {
     if (valueInput) {
@@ -21,6 +32,38 @@ const CalculationForm = () => {
     }
   }, [valueInput, exchangeRate]);
 
+  const productIdFormHandler = (e) => {
+    e.preventDefault();
+
+    Axios.get(`/api/product-info/${ProductID}`)
+      .then((result) => {
+        if (result.data) {
+          const { SD, CD, VAT, RD } = result.data;
+          setCD_Rate(CD);
+          setRD_Rate(RD);
+          setVAT_Rate(VAT);
+          setSD_Rate(SD);
+        } else {
+          return swal("", "No data found for this productId", "error");
+        }
+        console.log(result.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  useEffect(() => {
+    if (AV && (CD_Rate || SD_Rate || VAT_Rate || RD_Rate)) {
+      setCD_Val(AV * CD_Rate);
+
+      setRD_Val(AV * RD_Rate);
+
+      setSD_Val(AV + CD_Val + RD_Val);
+      setVAT_Val(AV + CD_Val + RD_Val + SD_Val);
+      setTotal(VAT_Val * 2);
+    }
+  }, [CD_Rate, SD_Rate, VAT_Rate, AV, RD_Rate]);
   return (
     <div>
       <Container className="p-4">
@@ -64,55 +107,87 @@ const CalculationForm = () => {
                   <div className="">
                     <label style={{ width: "30px" }}>CD </label>{" "}
                     <input
+                      value={CD_Rate}
+                      onChange={(e) => setCD_Rate(e.target.value)}
                       style={{ width: "50px" }}
                       type="number"
                       name=""
                       id=""
                     />
                   </div>
-                  <input type="number" name="" id="" />
+                  <input
+                    value={CD_Val}
+                    onChange={(e) => setCD_Val(e.target.value)}
+                    type="number"
+                    name=""
+                    id=""
+                  />
                 </div>
                 <div className="d-flex align-items-center justify-content-between mb-2">
                   <div className="">
                     <label style={{ width: "30px" }}>RD </label>{" "}
                     <input
+                      value={RD_Rate}
+                      onChange={(e) => setRD_Rate(e.target.value)}
                       style={{ width: "50px" }}
                       type="number"
                       name=""
                       id=""
                     />
                   </div>
-                  <input type="number" name="" id="" />
+                  <input
+                    value={RD_Val}
+                    onChange={(e) => setRD_Val(e.target.value)}
+                    type="number"
+                    name=""
+                    id=""
+                  />
                 </div>
                 <div className="d-flex align-items-center justify-content-between mb-2">
                   <div className="">
                     <label style={{ width: "30px" }}>SD </label>{" "}
                     <input
+                      value={SD_Rate}
+                      onChange={(e) => setSD_Rate(e.target.value)}
                       style={{ width: "50px" }}
                       type="number"
                       name=""
                       id=""
                     />
                   </div>
-                  <input type="number" name="" id="" />
+                  <input
+                    value={SD_Val}
+                    onChange={(e) => setSD_Val(e.target.value)}
+                    type="number"
+                    name=""
+                    id=""
+                  />
                 </div>
                 <div className="d-flex align-items-center justify-content-between mb-2">
                   <div className="">
                     <label style={{ width: "30px" }}>VAT </label>{" "}
                     <input
+                      value={VAT_Rate}
+                      onChange={(e) => setVAT_Rate(e.target.value)}
                       style={{ width: "50px" }}
                       type="number"
                       name=""
                       id=""
                     />
                   </div>
-                  <input type="number" name="" id="" />
+                  <input
+                    value={VAT_Val}
+                    onChange={(e) => setVAT_Val(e.target.value)}
+                    type="number"
+                    name=""
+                    id=""
+                  />
                 </div>
               </div>
               <hr />
               <div className="d-flex align-items-center justify-content-between">
                 <p>Total</p>
-                <p>0.00 Taka</p>
+                <p>{total} Taka</p>
               </div>
             </Col>
             <Col md={4}>
@@ -128,7 +203,7 @@ const CalculationForm = () => {
               </div>
               <br />
 
-              <div className="">
+              <form onSubmit={productIdFormHandler}>
                 <label style={{ width: "120px" }}>Product ID :</label>
                 <input
                   onChange={(e) => setProductID(e.target.value)}
@@ -136,7 +211,7 @@ const CalculationForm = () => {
                   name=""
                   id=""
                 />
-              </div>
+              </form>
             </Col>
           </Row>
         </Paper>
